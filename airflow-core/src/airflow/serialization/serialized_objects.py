@@ -51,6 +51,7 @@ from airflow.models.taskinstancekey import TaskInstanceKey
 from airflow.models.xcom import XComModel
 from airflow.models.xcom_arg import SchedulerXComArg, deserialize_xcom_arg
 from airflow.providers_manager import ProvidersManager
+from airflow.sdk.bases.operator import BaseOperator as TaskSDKBaseOperator
 from airflow.sdk.definitions.asset import (
     Asset,
     AssetAlias,
@@ -63,7 +64,6 @@ from airflow.sdk.definitions.asset import (
     AssetWatcher,
     BaseAsset,
 )
-from airflow.sdk.definitions.baseoperator import BaseOperator as TaskSDKBaseOperator
 from airflow.sdk.definitions.mappedoperator import MappedOperator
 from airflow.sdk.definitions.param import Param, ParamsDict
 from airflow.sdk.definitions.taskgroup import MappedTaskGroup, TaskGroup
@@ -642,7 +642,7 @@ class BaseSerialization:
     @classmethod
     def serialize_to_json(
         cls,
-        object_to_serialize: BaseOperator | MappedOperator | DAG,
+        object_to_serialize: TaskSDKBaseOperator | MappedOperator | DAG,
         decorated_fields: set,
     ) -> dict[str, Any]:
         """Serialize an object to JSON."""
@@ -726,7 +726,7 @@ class BaseSerialization:
             return var.to_dict()
         elif isinstance(var, MappedOperator):
             return cls._encode(SerializedBaseOperator.serialize_mapped_operator(var), type_=DAT.OP)
-        elif isinstance(var, BaseOperator):
+        elif isinstance(var, TaskSDKBaseOperator):
             var._needs_expansion = var.get_needs_expansion()
             return cls._encode(SerializedBaseOperator.serialize_operator(var), type_=DAT.OP)
         elif isinstance(var, cls._datetime_types):
@@ -1275,11 +1275,11 @@ class SerializedBaseOperator(BaseOperator, BaseSerialization):
         return serialized_op
 
     @classmethod
-    def serialize_operator(cls, op: BaseOperator | MappedOperator) -> dict[str, Any]:
+    def serialize_operator(cls, op: TaskSDKBaseOperator | MappedOperator) -> dict[str, Any]:
         return cls._serialize_node(op)
 
     @classmethod
-    def _serialize_node(cls, op: BaseOperator | MappedOperator) -> dict[str, Any]:
+    def _serialize_node(cls, op: TaskSDKBaseOperator | MappedOperator) -> dict[str, Any]:
         """Serialize operator into a JSON object."""
         serialize_op = cls.serialize_to_json(op, cls._decorated_fields)
 
